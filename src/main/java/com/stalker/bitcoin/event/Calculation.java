@@ -208,6 +208,7 @@ public class Calculation implements ExchangePriceChangeListener {
             e.start();
         }
 
+        LOG.info("System start, Begin object waiting");
         synchronized (object) {
             object.wait();
         }

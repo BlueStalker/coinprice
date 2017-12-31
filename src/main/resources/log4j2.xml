@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN" >
-    <Properties>
-        <Property name="test">test</Property>
-    </Properties>
+<Configuration>
     <Appenders>
-        <!--<Console name="STDOUT" target="SYSTEM_OUT">-->
-            <!--<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n"/>-->
-        <!--</Console>-->
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
         <File name="LogFile" fileName="/tmp/coin.log">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </File>
@@ -14,9 +11,9 @@
 
     <Loggers>
         <Root level="ERROR">
-            <AppenderRef ref="STDOUT" />
+            <!--<AppenderRef ref="STDOUT" />-->
         </Root>
-        <Logger name="coinprice" level="TRACE">
+        <Logger name="coinprice" level="INFO">
             <Appender-Ref ref="STDOUT" />
             <Appender-Ref ref="LogFile" />
         </Logger>
