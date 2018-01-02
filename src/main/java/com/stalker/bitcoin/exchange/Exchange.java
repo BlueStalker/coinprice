@@ -14,5 +14,4 @@ public interface Exchange {
     void start();
 
     void setOnPriceChangeListener(ExchangePriceChangeListener listener);
-
 }

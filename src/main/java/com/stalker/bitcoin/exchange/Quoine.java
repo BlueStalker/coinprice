@@ -37,8 +37,8 @@ public class Quoine extends AbstractExchange {
             public void onEvent(String channel, String event, String data) {
                 try {
                     updateOrderBook(buys, mapper.readTree(data));
-                    if (listener != null) {
-                        if (!buys.isEmpty()) listener.change(id, true, buys.firstEntry().getKey(), buys.firstEntry().getValue());
+                    if (listener != null && !buys.isEmpty()) {
+                        listener.change(System.currentTimeMillis(), id, true, buys);
                     }
                     //debugOrderBook();
                 } catch (Exception e) {
@@ -54,8 +54,8 @@ public class Quoine extends AbstractExchange {
                 try {
                 //    System.out.println(Thread.currentThread().getId() + " sell " + data);
                     updateOrderBook(sells, mapper.readTree(data));
-                    if (listener != null) {
-                        if (!sells.isEmpty()) listener.change(id, false, sells.firstEntry().getKey(), sells.firstEntry().getValue());
+                    if (listener != null && !sells.isEmpty()) {
+                        listener.change(System.currentTimeMillis(), id, false, sells);
                     }
                 } catch (Exception e) {
 

@@ -40,8 +40,9 @@ public class Bitflyer extends AbstractExchange {
                 processOrder(elem.getAsJsonObject().get("asks").getAsJsonArray(), sells);
                 //debugOrderBook();
                 if (listener != null) {
-                    if (!buys.isEmpty()) listener.change(id, true, buys.firstEntry().getKey(), buys.firstEntry().getValue());
-                    if (!sells.isEmpty()) listener.change(id, false, sells.firstEntry().getKey(), sells.firstEntry().getValue());
+                    long ts = System.currentTimeMillis();
+                    if (!buys.isEmpty()) listener.change(ts, id, true, buys);
+                    if (!sells.isEmpty()) listener.change(ts, id, false, sells);
                 }
             }
 

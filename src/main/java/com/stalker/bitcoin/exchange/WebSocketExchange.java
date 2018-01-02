@@ -50,7 +50,6 @@ public abstract class WebSocketExchange extends AbstractExchange {
                 session.getRemote().sendString(endpoint);
             }
         } catch (Throwable t) {
-            t.printStackTrace(System.err);
             t.printStackTrace();
         }
     }
