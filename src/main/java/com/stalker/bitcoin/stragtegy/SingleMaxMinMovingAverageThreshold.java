@@ -1,7 +1,9 @@
 package com.stalker.bitcoin.stragtegy;
 
-import com.stalker.bitcoin.event.PriceAndAmount;
+import com.stalker.bitcoin.model.PriceAndAmount;
 import com.stalker.bitcoin.exchange.Exchange;
+import com.stalker.bitcoin.http.config.CoinPriceConfiguration;
+import com.stalker.bitcoin.trade.TradeManagement;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -27,9 +29,12 @@ public class SingleMaxMinMovingAverageThreshold extends SingleMaxMin {
     private Map<Integer, Double> movingSum;
     private final double threshold;
 
-    public SingleMaxMinMovingAverageThreshold(Map<Integer, Exchange> exchanges, double threshold, boolean isSimulation) {
-        super(exchanges, isSimulation);
-        this.threshold = threshold;
+    public SingleMaxMinMovingAverageThreshold(
+            Map<Integer, Exchange> exchanges,
+            CoinPriceConfiguration config,
+            TradeManagement tradeManagement) {
+        super(exchanges, config, tradeManagement);
+        this.threshold = config.getStrategy().getThreshold();
         movingSum = new HashMap<>(N * (N - 1));
         distances = new HashMap<>(N * (N - 1));
         for (int i : exchanges.keySet()) {
@@ -41,14 +46,11 @@ public class SingleMaxMinMovingAverageThreshold extends SingleMaxMin {
             }
         }
     }
-    public SingleMaxMinMovingAverageThreshold(Map<Integer, Exchange> exchanges, double threshold) {
-        this(exchanges, threshold, false);
-    }
 
     public void compute(long ts, int buyExchange, PriceAndAmount maxBuy,
                         int sellExchange, PriceAndAmount minSell) {
 
-        logPrice(ts, buyExchange, maxBuy.price, sellExchange, minSell.price);
+        logModelingPrice(ts, buyExchange, maxBuy.price, sellExchange, minSell.price);
         int key = buyExchange * 10 + sellExchange;
         Queue<Distance> q = distances.get(key);
         double sum = movingSum.get(key);
@@ -71,9 +73,7 @@ public class SingleMaxMinMovingAverageThreshold extends SingleMaxMin {
         // probably need to be changed;
         double percent = (value - movingAverage) * 1000.0d / maxBuy.price;
         if (percent > threshold && beginTrade) {
-            for (TradeListener listener : tradeListeners) {
-                listener.onTrade(ts, buyExchange, sellExchange, maxBuy, minSell);
-            }
+            tradeManagement.onTrade(ts, buyExchange, sellExchange, maxBuy, minSell);
         }
     }
 }

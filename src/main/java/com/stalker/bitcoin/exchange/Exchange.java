@@ -1,7 +1,5 @@
 package com.stalker.bitcoin.exchange;
 
-import java.util.TreeMap;
-
 /**
  * Created by curt on 12/28/17.
  */

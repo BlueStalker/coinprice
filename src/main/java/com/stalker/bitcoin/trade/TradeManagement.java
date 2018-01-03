@@ -1,8 +1,9 @@
 package com.stalker.bitcoin.trade;
 
-import com.stalker.bitcoin.event.PriceAndAmount;
+import com.stalker.bitcoin.model.Balance;
+import com.stalker.bitcoin.model.PriceAndAmount;
 import com.stalker.bitcoin.exchange.Exchange;
-import com.stalker.bitcoin.stragtegy.TradeListener;
+import com.stalker.bitcoin.http.config.CoinPriceConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,91 +14,73 @@ import java.util.Map;
 /**
  * Created by curt on 1/1/18.
  */
-public class TradeManagement {
-    private static final Logger LOG = LoggerFactory.getLogger("coinprice");
+public abstract class TradeManagement {
+    protected static final Logger LOG = LoggerFactory.getLogger("coinprice");
 
-    private Map<Integer, Exchange> exchanges;
+    private final Map<Integer, Exchange> exchanges;
     private static final String ORDER_FILE = "./order.csv";
 
-    private FileWriter orderPrinter;
+    protected FileWriter orderPrinter;
 
-    private Map<Integer, Double> cash;
-    private Map<Integer, Double> coins;
+    protected Map<Integer, Double> cash;
+    protected Map<Integer, Double> coins;
 
-    private final boolean isSimulation;
+    private final CoinPriceConfiguration config;
 
-    // This constructor should be called by production
-    // and we need to use Exchange API to update balance info here.
-    public TradeManagement() {
-        this(new HashMap<>(), new HashMap<>(), false);
-    }
-
-    // This should always be called by simulation
-    public TradeManagement(Map<Integer, Double> cash, Map<Integer, Double> coins, boolean isSimulation) {
-        this.isSimulation = isSimulation;
+    public TradeManagement(
+            Map<Integer, Exchange> exchanges,
+            CoinPriceConfiguration config) {
+        this.config = config;
+        this.exchanges = exchanges;
         try {
-            this.cash = cash;
-            this.coins = coins;
             this.orderPrinter = new FileWriter(ORDER_FILE, true);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public TradeListener getTradeListener() {
-        return tradeListener;
+    public synchronized Map<String, Balance> getBalances() {
+        Map<String, Balance> balances = new HashMap<>();
+        for (int id: exchanges.keySet()) {
+            String name = exchanges.get(id).getName();
+            Balance balance = new Balance();
+            balance.setCash(cash.get(id));
+            balance.setCoin(coins.get(id));
+            balances.put(name, balance);
+        }
+        return balances;
     }
 
-    private TradeListener tradeListener = new TradeListener() {
-        @Override
-        public void onTrade(long ts, int buyExchange, int sellExchange, PriceAndAmount maxBuy, PriceAndAmount minSell) {
-            double sellCoins = coins.get(buyExchange);
-            if (sellCoins == 0d) {
-                LOG.info("no coins to sell exchange : " + buyExchange);
-                return;
-            }
-            double availableCash = cash.get(sellExchange);
-            if (availableCash == 0d) {
-                LOG.info("no cash to buy exchange : " + sellExchange);
-                return;
-            }
-
-            // The max coins we can buy on sell exchange;
-            double buyCoins = availableCash / minSell.price;
-
-            double maxExternalAmount = Math.min(maxBuy.amount, minSell.amount);
-            double tradeAmount = Math.min(Math.min(sellCoins, buyCoins), maxExternalAmount);
-
-            if (tradeAmount == 0.0d) return;
-            LOG.info(" Trading amount " + tradeAmount + " Sell " + maxBuy.price
-                    + " Buy " + minSell.price
-                    + " Latency " + (System.currentTimeMillis() - ts));
-            if (isSimulation) {
-                simulateTrade(ts, buyExchange, sellExchange, tradeAmount, maxBuy, minSell);
-            }
+    public synchronized void onTrade(long ts, int buyExchange, int sellExchange, PriceAndAmount maxBuy, PriceAndAmount minSell) {
+        double sellCoins = coins.get(buyExchange);
+        if (sellCoins == 0d) {
+            LOG.info("no coins to sell exchange : " + buyExchange);
+            return;
         }
-    };
-
-
-    private void simulateTrade(long ts, int buyExchange, int sellExchange,
-                               double tradeAmount, PriceAndAmount maxBuy, PriceAndAmount minSell) {
-
-        coins.put(buyExchange, coins.get(buyExchange) - tradeAmount);
-        coins.put(sellExchange, coins.get(sellExchange) + tradeAmount);
-        cash.put(buyExchange, cash.get(buyExchange) + tradeAmount * maxBuy.price);
-        cash.put(sellExchange, cash.get(sellExchange) - tradeAmount * minSell.price);
-        try {
-            orderPrinter.write(ts + "," + buyExchange + "," + cash.get(buyExchange) + "," + coins.get(buyExchange) + ",buy\n");
-            orderPrinter.write(ts + "," + sellExchange + "," + cash.get(sellExchange) + "," + coins.get(sellExchange) + ",sell\n");
-        } catch (Exception e) {
-            e.printStackTrace();
+        double availableCash = cash.get(sellExchange);
+        if (availableCash == 0d) {
+            LOG.info("no cash to buy exchange : " + sellExchange);
+            return;
         }
-        debugBalance();
-        System.out.println();
+
+        // The max coins we can buy on sell exchange;
+        double buyCoins = availableCash / minSell.price;
+
+        double maxExternalAmount = Math.min(maxBuy.amount, minSell.amount);
+        double tradeAmount = Math.min(Math.min(sellCoins, buyCoins), maxExternalAmount);
+
+        if (tradeAmount == 0.0d) return;
+        LOG.info(" Trading amount " + tradeAmount + " Sell " + maxBuy.price
+                + " Buy " + minSell.price
+                + " Latency " + (System.currentTimeMillis() - ts));
+        doTrade(ts, buyExchange, sellExchange, tradeAmount, maxBuy, minSell);
     }
 
+    abstract void doTrade(long ts, int buyExchange, int sellExchange,
+                          double tradeAmount, PriceAndAmount maxBuy, PriceAndAmount minSell);
 
-    private void debugBalance() {
+
+    protected void debugBalance() {
         for (int i : exchanges.keySet()) {
             LOG.info(" EXCHANGE:: " + i + " CASH: " + cash.get(i) + " COINS: " + coins.get(i));
         }

@@ -8,6 +8,4 @@ import com.stalker.bitcoin.exchange.ExchangePriceChangeListener;
  */
 public interface Strategy {
     ExchangePriceChangeListener getExchangePriceChangeListener();
-
-    void addTradeListener(TradeListener listener);
 }

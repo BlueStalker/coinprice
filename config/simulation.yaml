@@ -1,0 +1,42 @@
+
+server:
+    type: simple
+    applicationContextPath: /
+    adminContextPath: /admin
+    registerDefaultExceptionMappers: false
+    connector:
+        type: http
+        port: 8080
+        maxRequestHeaderSize: 16KiB
+
+logging:
+    level: INFO
+
+    loggers:
+        io.dropwizard: INFO
+        com.stalker.bitcoin: DEBUG
+
+    appenders:
+        - type: file
+          currentLogFilename: /tmp/coin.log
+          threshold: ALL
+          archive: true
+          archivedLogFilenamePattern: /tmp/coin-%d.log
+          archivedFileCount: 1
+
+        - type: console
+          threshold: INFO
+
+simulation: true
+
+simulationExchanges:
+   - name: coincheck
+     cash: 10000.0
+     coin: 0.0064516
+   - name: quoine
+     cash: 10000.0
+     coin: 0.0064516
+
+strategy:
+     name: singleMovingAverage
+     threshold: 1.5

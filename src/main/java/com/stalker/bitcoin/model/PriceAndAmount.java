@@ -1,4 +1,4 @@
-package com.stalker.bitcoin.event;
+package com.stalker.bitcoin.model;
 
 /**
  * Created by curt on 12/31/17.
