@@ -29,13 +29,15 @@ logging:
 
 simulation: true
 
-simulationExchanges:
-   - name: coincheck
-     cash: 10000.0
-     coin: 0.0064516
-   - name: quoine
-     cash: 10000.0
-     coin: 0.0064516
+simulationConfiguration:
+   fileName: file.ser
+   simulationExchanges:
+       - name: coincheck
+         cash: 10000.0
+         coin: 0.0064516
+       - name: quoine
+         cash: 10000.0
+         coin: 0.0064516
 
 strategy:
      name: singleMovingAverage

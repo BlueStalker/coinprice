@@ -55,13 +55,13 @@ public class Calculation {
 
     public synchronized boolean start() throws Exception {
         if (isStarted) return false;
-        if (!config.getSimulation()) {
+        //if (!config.getSimulation()) {
             for (Exchange e : exchanges.values()) {
-                e.start();
+                if (e.getID() != -1) e.start();
             }
-        } else {
+        //} else {
 
-        }
+        //}
         isStarted = true;
         LOG.info("System calculation started!");
         return true;

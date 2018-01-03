@@ -24,7 +24,7 @@ public class SimulationTradeManagement extends TradeManagement {
         super(exchanges, config);
         this.cash = new HashMap<>();
         this.coins = new HashMap<>();
-        for (SimulationConfiguration.ExchangeSimulationConfiguration ec :config.getSimulationExchanges()) {
+        for (SimulationConfiguration.ExchangeSimulationConfiguration ec :config.getSimulationConfiguration().getSimulationExchanges()) {
             cash.put(ExchangeEnum.fromName(ec.getName()).getId(), ec.getCash());
             coins.put(ExchangeEnum.fromName(ec.getName()).getId(), ec.getCoin());
         }

@@ -36,7 +36,7 @@ public class SimulationConfiguration {
     }
 
 
-    public class ExchangeSimulationConfiguration {
+    public static class ExchangeSimulationConfiguration {
         private final String name;
         private final Double cash;
         private final Double coin;
