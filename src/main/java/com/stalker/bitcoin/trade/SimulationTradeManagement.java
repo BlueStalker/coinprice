@@ -28,6 +28,7 @@ public class SimulationTradeManagement extends TradeManagement {
             cash.put(ExchangeEnum.fromName(ec.getName()).getId(), ec.getCash());
             coins.put(ExchangeEnum.fromName(ec.getName()).getId(), ec.getCoin());
         }
+        updateAccountBalanceHistory(System.currentTimeMillis());
     }
 
     void doTrade(long ts, int buyExchange, int sellExchange,
@@ -44,6 +45,5 @@ public class SimulationTradeManagement extends TradeManagement {
             e.printStackTrace();
         }
         debugBalance();
-        System.out.println();
     }
 }

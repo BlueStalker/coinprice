@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -13,7 +14,20 @@ public class SimulationConfiguration {
 
     private List<ExchangeSimulationConfiguration> simulationExchanges = ImmutableList.of();
 
+    @Nullable
     private String fileName;
+
+    private String mode;
+
+    @JsonProperty
+    public String getMode() {
+        return mode;
+    }
+
+    @JsonProperty
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
 
     @JsonProperty
     public String getFileName() {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.stalker.bitcoin.Calculation;
 import com.stalker.bitcoin.http.config.CoinPriceConfiguration;
+import com.stalker.bitcoin.model.AccountBalance;
 import com.stalker.bitcoin.model.Balance;
 import com.stalker.bitcoin.trade.TradeManagement;
 
@@ -17,6 +18,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,9 +47,15 @@ public class ApiResource {
     }
 
     @GET
-    @Path("balance")
-    public Map<String, Balance> getBalances() throws Exception {
-        return tradeManagement.getBalances();
+    @Path("balance/latest")
+    public AccountBalance getBalances() throws Exception {
+        return tradeManagement.getLatestBalance();
+    }
+
+    @GET
+    @Path("balance/history")
+    public List<AccountBalance> getBalanceHistory() throws Exception {
+        return tradeManagement.getAccountBalanceHistory();
     }
 
     @POST

@@ -1,6 +1,8 @@
 package com.stalker.bitcoin.trade;
 
+import com.stalker.bitcoin.model.AccountBalance;
 import com.stalker.bitcoin.model.Balance;
+import com.stalker.bitcoin.model.ExchangeBalance;
 import com.stalker.bitcoin.model.PriceAndAmount;
 import com.stalker.bitcoin.exchange.Exchange;
 import com.stalker.bitcoin.http.config.CoinPriceConfiguration;
@@ -8,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,6 +29,8 @@ public abstract class TradeManagement {
     protected Map<Integer, Double> cash;
     protected Map<Integer, Double> coins;
 
+    private List<AccountBalance> balancesHistory;
+
     private final CoinPriceConfiguration config;
 
     public TradeManagement(
@@ -32,6 +38,7 @@ public abstract class TradeManagement {
             CoinPriceConfiguration config) {
         this.config = config;
         this.exchanges = exchanges;
+        this.balancesHistory = new ArrayList<>();
         try {
             this.orderPrinter = new FileWriter(ORDER_FILE, true);
         } catch (Exception e) {
@@ -39,16 +46,12 @@ public abstract class TradeManagement {
         }
     }
 
-    public synchronized Map<String, Balance> getBalances() {
-        Map<String, Balance> balances = new HashMap<>();
-        for (int id: exchanges.keySet()) {
-            String name = exchanges.get(id).getName();
-            Balance balance = new Balance();
-            balance.setCash(cash.get(id));
-            balance.setCoin(coins.get(id));
-            balances.put(name, balance);
-        }
-        return balances;
+    public synchronized AccountBalance getLatestBalance() {
+        return balancesHistory.get(balancesHistory.size() - 1);
+    }
+
+    public synchronized List<AccountBalance> getAccountBalanceHistory() {
+        return balancesHistory;
     }
 
     public synchronized void onTrade(long ts, int buyExchange, int sellExchange, PriceAndAmount maxBuy, PriceAndAmount minSell) {
@@ -74,6 +77,24 @@ public abstract class TradeManagement {
                 + " Buy " + minSell.price
                 + " Latency " + (System.currentTimeMillis() - ts));
         doTrade(ts, buyExchange, sellExchange, tradeAmount, maxBuy, minSell);
+        updateAccountBalanceHistory(ts);
+    }
+
+    protected void updateAccountBalanceHistory(long ts) {
+        AccountBalance accountBalance = new AccountBalance();
+        accountBalance.setTs(ts);
+        List<ExchangeBalance> exchangeBalances = new ArrayList<>();
+        for (int id: exchanges.keySet()) {
+            ExchangeBalance eb = new ExchangeBalance();
+            Balance balance = new Balance();
+            balance.setCash(cash.get(id));
+            balance.setCoin(coins.get(id));
+            eb.setExchange(exchanges.get(id).getName());
+            eb.setBalance(balance);
+            exchangeBalances.add(eb);
+        }
+        accountBalance.setBalances(exchangeBalances);
+        balancesHistory.add(accountBalance);
     }
 
     abstract void doTrade(long ts, int buyExchange, int sellExchange,

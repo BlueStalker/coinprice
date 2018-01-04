@@ -3,11 +3,14 @@ package com.stalker.bitcoin.ws;
 import com.stalker.bitcoin.exchange.WebSocketExchange;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by curt on 12/27/17.
  */
 public class EventSocket extends WebSocketAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger("coinprice");
 
     private WebSocketExchange exchange;
 
@@ -18,20 +21,20 @@ public class EventSocket extends WebSocketAdapter {
     @Override
     public void onWebSocketConnect(Session sess) {
         super.onWebSocketConnect(sess);
-        //System.out.println("Socket Connected: " + sess);
+        LOG.info("Socket Connected: " + sess);
     }
 
     @Override
     public void onWebSocketText(String message) {
         super.onWebSocketText(message);
         exchange.onSocketText(message);
-        //System.out.println("Received TEXT message: " + message);
+        //LOG.info("Received TEXT message: " + message);
     }
 
     @Override
     public void onWebSocketClose(int statusCode, String reason) {
         super.onWebSocketClose(statusCode, reason);
-        System.out.println("Socket Closed: [" + statusCode + "] " + reason);
+        LOG.info("Socket Closed: [" + statusCode + "] " + reason);
     }
 
     @Override

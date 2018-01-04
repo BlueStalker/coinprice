@@ -47,7 +47,7 @@ public class CoinPriceModule extends AbstractModule {
         bind(CoinPriceConfiguration.class).toInstance(config);
         bind(MetricRegistry.class).toInstance(env.metrics());
         bind(ObjectMapper.class).toInstance(env.getObjectMapper());
-        if (config.getSimulation()) {
+        if (config.isSimulation()) {
             bind(TradeManagement.class).to(SimulationTradeManagement.class);
         } else {
             bind(TradeManagement.class).to(DefaultTradeManagement.class);
@@ -66,15 +66,22 @@ public class CoinPriceModule extends AbstractModule {
 
     @Singleton
     @Provides
+    @Named("localExchange")
+    public LocalExchange provideLocalExchange(CoinPriceConfiguration config) {
+        SimulationConfiguration sc = config.getSimulationConfiguration();
+        return new LocalExchange(sc == null ? null : sc.getFileName());
+    }
+
+    @Singleton
+    @Provides
     @Named("allExchanges")
     public Map<Integer, Exchange> provideExchangeConfigurations(CoinPriceConfiguration config) {
         ImmutableMap.Builder<Integer, Exchange> builder = ImmutableMap.builder();
-        if (config.getSimulation()) {
+        if (config.isSimulation()) {
             for (SimulationConfiguration.ExchangeSimulationConfiguration e : config.getSimulationConfiguration().getSimulationExchanges()) {
                 Exchange exchange = toExchange(ExchangeEnum.fromName(e.getName()));
                 builder.put(exchange.getID(), exchange);
             }
-            builder.put(-1, new LocalExchange(config.getSimulationConfiguration().getFileName()));
         } else {
             for (ExchangeConfiguration ec: config.getExchanges()) {
                 Exchange exchange = toExchange(ExchangeEnum.fromName(ec.getName()));

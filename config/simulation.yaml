@@ -27,10 +27,9 @@ logging:
         - type: console
           threshold: INFO
 
-simulation: true
-
 simulationConfiguration:
-   fileName: file.ser
+   mode:     exchange         # mode (local/exchange) indicates whether we read file for price or real exchanges
+   fileName: raw_price.log
    simulationExchanges:
        - name: coincheck
          cash: 10000.0

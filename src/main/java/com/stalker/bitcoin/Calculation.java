@@ -4,13 +4,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.stalker.bitcoin.exchange.Exchange;
+import com.stalker.bitcoin.exchange.LocalExchange;
 import com.stalker.bitcoin.http.config.CoinPriceConfiguration;
 import com.stalker.bitcoin.http.resources.Status;
 import com.stalker.bitcoin.stragtegy.Strategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
@@ -30,18 +30,24 @@ public class Calculation {
     private boolean isStarted;
     private long serverStartTime;
     private CoinPriceConfiguration config;
+    private LocalExchange localExchange;
 
     @Inject
     public Calculation(
             @Named("allExchanges")Map<Integer, Exchange> exchanges,
+            @Named("localExchange") LocalExchange localExchange,
             Strategy strategy,
             CoinPriceConfiguration config
             ) throws Exception {
         this.exchanges = exchanges;
+        this.localExchange = localExchange;
         this.serverStartTime = System.currentTimeMillis();
         this.config = config;
         for (Exchange e: exchanges.values()) {
             e.setOnPriceChangeListener(strategy.getExchangePriceChangeListener());
+        }
+        if (this.localExchange != null) {
+            this.localExchange.setOnPriceChangeListener(strategy.getExchangePriceChangeListener());
         }
     }
 
@@ -55,20 +61,21 @@ public class Calculation {
 
     public synchronized boolean start() throws Exception {
         if (isStarted) return false;
-        //if (!config.getSimulation()) {
+        if (config.isLocalSimulation()) {
+            localExchange.start();
+        } else {
+            // This is not a simulation on a simulation running on the real exchange
             for (Exchange e : exchanges.values()) {
-                if (e.getID() != -1) e.start();
+                e.start();
             }
-        //} else {
-
-        //}
+        }
         isStarted = true;
         LOG.info("System calculation started!");
         return true;
     }
 
     public static void main(String[] argv) {
-        String filename = "file.ser";
+        String filename = "raw_price.log";
 
         // Serialization
         try
@@ -97,7 +104,7 @@ public class Calculation {
             ObjectInputStream in = new ObjectInputStream(file);
 
             while(in.available() > 0) {
-                System.out.println(in.readLong() + " " + in.readBoolean() + " " + in.readObject());
+                System.out.println(in.readLong() + " " + " " + in.readInt() + " " + in.readBoolean() + " " + in.readObject());
             }
 
             in.close();

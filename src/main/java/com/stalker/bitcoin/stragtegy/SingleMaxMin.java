@@ -5,6 +5,8 @@ import com.stalker.bitcoin.exchange.Exchange;
 import com.stalker.bitcoin.exchange.ExchangePriceChangeListener;
 import com.stalker.bitcoin.http.config.CoinPriceConfiguration;
 import com.stalker.bitcoin.trade.TradeManagement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by curt on 1/1/18.
@@ -25,6 +28,7 @@ public abstract class SingleMaxMin implements Strategy {
     private static final String PRICE_FILE = "./price.csv";
     private static final String RAW_PRICE_FILE = "./raw_price.log";
     protected static final long WINDOW = 5 * 60 * 1000L;
+    private static final Logger LOG = LoggerFactory.getLogger("coinprice");
 
     protected Map<Integer, PriceAndAmount> maxBuy;
     protected Map<Integer, PriceAndAmount> minSell;
@@ -33,26 +37,29 @@ public abstract class SingleMaxMin implements Strategy {
     protected int N;
     protected boolean beginTrade;
 
+    private AtomicLong count = new AtomicLong(0);
     protected CoinPriceConfiguration config;
 
     protected TradeManagement tradeManagement;
 
     protected void logModelingPrice(long ts, int buyExchange, double maxBuyPrice, int sellExchange, double minSellPrice) {
-        //if (!config.getSimulation()) {
-        pricePrinter.println(ts + "," +
-                buyExchange + "," + maxBuyPrice + "," + minSell.get(buyExchange).price +
-                "," + sellExchange + "," + maxBuy.get(sellExchange).price + "," + minSellPrice);
-        //}
+        if (config.isLocalSimulation()) return;
+        try {
+            pricePrinter.println(ts + "," +
+                    buyExchange + "," + maxBuyPrice + "," + minSell.get(buyExchange).price +
+                    "," + sellExchange + "," + maxBuy.get(sellExchange).price + "," + minSellPrice);
+        } catch (Exception e) {
+            // On system startup there could be NPE ,but let's just ignore them
+        }
     }
 
     private void logRawPrices(long ts, int id, boolean buy, TreeMap<Double, Double> prices) {
         try {
-            //if (!config.getSimulation()) {
+            if (config.isLocalSimulation()) return;
             rawPricePrinter.writeLong(ts);
             rawPricePrinter.writeInt(id);
             rawPricePrinter.writeBoolean(buy);
             rawPricePrinter.writeObject(prices);
-            //}
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -77,7 +84,9 @@ public abstract class SingleMaxMin implements Strategy {
             maxBuy = new HashMap<>();
             minSell = new HashMap<>();
             pricePrinter = new PrintWriter(new FileWriter(PRICE_FILE, true));
-            rawPricePrinter = new ObjectOutputStream(new FileOutputStream(RAW_PRICE_FILE, true));
+            if (!config.isLocalSimulation()) {
+                rawPricePrinter = new ObjectOutputStream(new FileOutputStream(RAW_PRICE_FILE));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -98,12 +107,12 @@ public abstract class SingleMaxMin implements Strategy {
         // I assume the first Entry is always what we should be cared about
         // EG. Buy is descending order and sell is ascending order.
         public void change(long ts, int id, boolean buy, TreeMap<Double, Double> prices) {
-            logRawPrices(ts, id, buy, prices);
             Map.Entry<Double, Double> entry = prices.firstEntry();
             double price = entry.getKey();
             double amount = entry.getValue();
             // This shall be running in different threads.
             synchronized (this) {
+                logRawPrices(ts, id, buy, prices);
                 if (buy) {
                     PriceAndAmount existing = maxBuy.get(id);
                     if (existing != null && existing.price == price) return;
@@ -127,9 +136,12 @@ public abstract class SingleMaxMin implements Strategy {
         }
     };
 
-    public void finalize() {
+    public void finalize() throws Exception {
         if (pricePrinter != null) {
             pricePrinter.close();
+        }
+        if (rawPricePrinter != null) {
+            rawPricePrinter.close();
         }
     }
 }

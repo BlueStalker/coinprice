@@ -11,8 +11,6 @@ import java.util.List;
  */
 public class CoinPriceConfiguration extends Configuration {
 
-    private Boolean simulation;
-
     private List<ExchangeConfiguration> exchanges = ImmutableList.of();
 
     private StrategyConfiguration strategy;
@@ -41,13 +39,12 @@ public class CoinPriceConfiguration extends Configuration {
     }
 
     @JsonProperty
-    public Boolean getSimulation() {
-        return simulation;
+    public Boolean isSimulation() {
+        return simulationConfiguration != null;
     }
 
-    @JsonProperty
-    public void setSimulation(Boolean simulation) {
-        this.simulation = simulation;
+    public boolean isLocalSimulation() {
+        return simulationConfiguration != null && simulationConfiguration.getMode().equals("local");
     }
 
     @JsonProperty("exchanges")
